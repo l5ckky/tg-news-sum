@@ -1,0 +1,5 @@
+pyrogram
+pymystem3
+tgcrypto
+loguru
+telethon
