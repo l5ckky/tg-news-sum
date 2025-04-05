@@ -73,12 +73,9 @@ client = TelegramClient('my_account', api_id, api_hash)
 #     return False
 
 
-# @client.on(events.NewMessage(chats=config.control_chanel_id))
-# async def control_channel_handler(event):
-#     await Params().get_attrs(client)
-#     message = event.message
-#     text = message.text.lower() if message.text else ""
-#     text_array = text.split(' ')
+@client.on(events.NewMessage(chats=config.afe2wf2wdvwve))
+async def control_channel_handler(event):
+    await client.forward_messages(config.control_chanel_id, event.message)
 
 
 @client.on(events.NewMessage(func=lambda e: e.is_channel))
