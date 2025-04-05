@@ -87,7 +87,6 @@ async def channel_message_handler(event):
     await params.get_attrs(client)
 
     message: telethon.types.Message = event.message
-    print(message)
     text = message.message or ""
     if message.peer_id.channel_id in params.channels:
         logger.debug(f'Канал {message.peer_id.channel_id} есть в списке')
