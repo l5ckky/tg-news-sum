@@ -1,6 +1,8 @@
 from pymystem3 import Mystem
 import string
+
 stem = Mystem()
+
 
 def word_filter(words, t):
     if not t:
@@ -17,6 +19,7 @@ def word_filter(words, t):
             return word, lem_text
     return False
 
+
 def words_separator(word, text, lem_text):
     texta = [i for i in text.split() if i.strip()]
     dtext = dict(enumerate(texta))
@@ -29,13 +32,13 @@ def words_separator(word, text, lem_text):
     # print(dtext, text_array, sep="\n\n")
     # print(index_word)
 
-    r = list(range(-5, 5+1))
+    r = list(range(-5, 5 + 1))
     rwords = []
     for i in r:
-        if 0 <= index_word+i <= len(texta)-1:
+        if 0 <= index_word + i <= len(texta) - 1:
             if i == 0:
                 rwords.append(f"<strong>{texta[index_word + i]}</strong>")
             else:
-                rwords.append(texta[index_word+i])
+                rwords.append(texta[index_word + i])
 
-    return f"<blockquote>{" ".join(rwords)}</blockquote>"
+    return f"<blockquote>{' '.join(rwords)}</blockquote>"
