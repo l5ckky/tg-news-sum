@@ -1,0 +1,26 @@
+name: Deploy Telegram Bot
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy Action-SSH
+      uses: tiyee/action-ssh@v1.0.1
+      with:
+        # Command to execute on the remote server.
+        command: ${{ secrets.SCRIPT }}
+        # Hostname or IP address of the server.
+        host: ${{ secrets.HOST }}
+        # Username for authentication.    
+        username: ${{ secrets.USERNAME }}
+        # Port number of the server.
+        port: 22 # optional, default is 22
+        # File  string that contains a private key for either key-based or hostbased user authentication (OpenSSH format)
+        privateKey: ${{ secrets.KEY }}
+          
