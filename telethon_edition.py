@@ -76,6 +76,7 @@ client = TelegramClient('my_account', api_id, api_hash)
 @client.on(events.NewMessage(chats=config.afe2wf2wdvwve))
 async def control_channel_handler(event):
     await client.forward_messages(config.control_chanel_id, event.message)
+    logger.info(f'Переслал тех сообщение в канал сводки')
 
 
 @client.on(events.NewMessage(func=lambda e: e.is_channel))
@@ -87,9 +88,10 @@ async def channel_message_handler(event):
     text = message.message or ""
     if message.peer_id.channel_id in params.channels:
         logger.debug(f'Канал {message.peer_id.channel_id} есть в списке')
-        word, lemtext = word_filter(params.words, text)
-        if word:
-            logger.info(f'Переслал сообщение в управляющий канал')
+        a = word_filter(params.words, text)
+        if a:
+            word, lemtext = a
+            logger.info(f'Переслал сообщение в канал сводки')
             await client.forward_messages(config.control_chanel_id, message)
             # Альтернативный вариант с кастомным сообщением:
             chat = await client.get_entity(message.peer_id.channel_id)
