@@ -1,3 +1,4 @@
+import telethon.types
 from pymystem3 import Mystem
 import string
 
@@ -13,7 +14,7 @@ def word_filter(words, t):
     lem_text = stem.lemmatize(text)
     text_array = [j for j in [i for i in lem_text] if j.isalpha()]
     for word in words:
-        if word in text_array:
+        if word.lower() in text_array:
             # index = stext.index(word)
             # print(f'Совпадение слова {word} со списком на индексе {index}')
             return word, lem_text
@@ -28,7 +29,7 @@ def words_separator(word, text, lem_text):
     # print(text_array)
     text_array = [i for i in text_array if i.strip()]
     text_array = dict(enumerate(["".join([j for j in i if j.isalpha()]) for i in text_array]))
-    index_word = list(text_array.values()).index(word)
+    index_word = list(text_array.values()).index(word.lower())
     # print(dtext, text_array, sep="\n\n")
     # print(index_word)
 
@@ -42,3 +43,13 @@ def words_separator(word, text, lem_text):
                 rwords.append(texta[index_word + i])
 
     return f"<blockquote>{' '.join(rwords)}</blockquote>"
+
+
+def text_msg(message: telethon.types.Message):
+    text = message.message
+    ftext = text[:(15 if len(text) >= 15 else None)] + ("…" if len(text) >= 15 else "")
+    return f"\"{ftext}\"(msgID={message.id})"
+
+
+async def text_ch(client, channel_id, add_id=True):
+    return f"{(await client.get_entity(channel_id)).title}{f"(chID={channel_id})" if add_id else ''}"

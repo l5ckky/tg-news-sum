@@ -8,7 +8,7 @@ from telethon.tl.types import Channel
 from pymystem3 import Mystem
 from loguru import logger
 
-from text_format import words_separator, word_filter
+from text_format import words_separator, word_filter, text_msg, text_ch
 
 import config
 import db
@@ -58,25 +58,11 @@ class Params:
 
 client = TelegramClient('my_account', api_id, api_hash)
 
-# def word_filter(words, t):
-#     if not t:
-#         return False
-#     stext = t[:]
-#     text = t.lower()
-#     text = ''.join([i for i in text if i.isalpha() or i in string.punctuation])
-#     text_array = stem.lemmatize(" ".join(words))
-#     for word in text.split():
-#         if word in text_array:
-#             index = stext.index(word)
-#             logger.info(f'Совпадение слова {word} со списком на индексе {index}')
-#             return index
-#     return False
 
-
-@client.on(events.NewMessage(chats=config.afe2wf2wdvwve))
+@client.on(events.NewMessage(chats=config.notifications))
 async def control_channel_handler(event):
     await client.forward_messages(config.control_chanel_id, event.message)
-    logger.info(f'Переслал тех сообщение в канал сводки')
+    logger.info(f'Техническое оповещение {text_msg(event.message)} переслано в канал сводки')
 
 
 @client.on(events.NewMessage(func=lambda e: e.is_channel))
@@ -87,19 +73,29 @@ async def channel_message_handler(event):
     message: telethon.types.Message = event.message
     text = message.message or ""
     if message.peer_id.channel_id in params.channels:
-        logger.debug(f'Канал {message.peer_id.channel_id} есть в списке')
+        logger.debug(
+            f'В канале {await text_ch(client, message.peer_id.channel_id)} появился новый пост {text_msg(message)}')
         a = word_filter(params.words, text)
         if a:
             word, lemtext = a
-            logger.info(f'Переслал сообщение в канал сводки')
-            await client.forward_messages(config.control_chanel_id, message)
-            # Альтернативный вариант с кастомным сообщением:
-            chat = await client.get_entity(message.peer_id.channel_id)
-            # await client.send_message(
-            #     config.control_chanel_id,
-            #     f"<strong>{word}</strong>\nСообщение: <a href=\"https://t.me/c/{chat.id}/{message.id}\">{chat.title}</a>\n{words_separator(word, message.message, lemtext)}",
-            #     parse_mode='html')
-            # await client.send_message(target, f">Циатата", parse_mode="md")
+            try:
+                await client.forward_messages(config.control_chanel_id, message)
+                logger.info(
+                    f'Пост {text_msg(message)} канала {await text_ch(client, message.peer_id.channel_id)} содержит '
+                    + f'слово \"{word}\" и переслан в канал сводки')
+            except telethon.errors.ChatForwardsRestrictedError:
+                await client.send_message(
+                    config.control_chanel_id,
+                    f"Обнаружено сообщение от "
+                    + f"{await text_ch(client, message.peer_id.channel_id, add_id=False)}\n"
+                    + f"{words_separator(word, message.message, lemtext)}\n"
+                    + f"(канал запретил пересылку, посмотрите по <a href=\"https://t.me/c/{message.peer_id.channel_id}/"
+                    + f"{message.id}\">ссылке</a>)",
+                    parse_mode='html')
+                logger.info(
+                    f'Пост {text_msg(message)} запрещающего пересылку канала '
+                    + f'{await text_ch(client, message.peer_id.channel_id)} содержит '
+                    + f'слово \"{word}\" и отправлен в канал сводки')
 
 
 if __name__ == '__main__':

@@ -1,3 +1,2 @@
-text_array = ["один", "два", "три"]
-a = [[j for j in i] for i in text_array]
-print(a)
+text = "1234fe3233131567890-"
+print(text[:(16 if len(text) >= 20 else None)] + ("..." if len(text) >= 20 else ""))
