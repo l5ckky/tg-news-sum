@@ -52,4 +52,4 @@ def text_msg(message: telethon.types.Message):
 
 
 async def text_ch(client, channel_id, add_id=True):
-    return f"{(await client.get_entity(channel_id)).title}{f"(chID={channel_id})" if add_id else ''}"
+    return f"{(await client.get_entity(channel_id)).title}{f'(chID={channel_id})' if add_id else ''}"
