@@ -1,5 +1,5 @@
-pyrogram
-pymystem3
-tgcrypto
-loguru
-telethon
+aiogram~=3.20.0.post0
+Pyrogram~=2.0.106
+loguru~=0.7.3
+pymystem3~=0.2.0
+Telethon~=1.39.0
