@@ -94,8 +94,7 @@ async def cmd_start(message: types.Message, back: None | types.CallbackQuery = N
 @dp.callback_query(F.data == "channels")
 async def channels_list(callback: types.CallbackQuery):
     await callback.message.edit_text(
-        f"{html.bold('Список каналов')}\n{html.italic('Нажмите на элемент для подробностей') if channels else
-        html.italic('Кажется, здесь пусто... Добавьте первый канал!')}",
+        f"{html.bold('Список каналов')}\n{html.italic('Нажмите на элемент для подробностей') if channels else html.italic('Кажется, здесь пусто... Добавьте первый канал!')}",
         reply_markup=build_keyboard(channels, "channel", "main_menu")
     )
 
@@ -104,8 +103,7 @@ async def channels_list(callback: types.CallbackQuery):
 @dp.callback_query(F.data == "words")
 async def words_list(callback: types.CallbackQuery):
     await callback.message.edit_text(
-        f"{html.bold('Список слов')}\n{html.italic('Нажмите на элемент для подробностей') if words else
-        html.italic('Кажется, здесь пусто... Добавьте первое слово!')}",
+        f"{html.bold('Список слов')}\n{html.italic('Нажмите на элемент для подробностей') if words else html.italic('Кажется, здесь пусто... Добавьте первое слово!')}",
         reply_markup=build_keyboard(words, "word", "main_menu")
     )
 
