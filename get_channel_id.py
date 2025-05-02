@@ -1,15 +1,19 @@
 import argparse
+
+import telethon.client
 from telethon.sync import TelegramClient
 from telethon.errors import SessionPasswordNeededError
+from telethon.client import DialogMethods
 import config
 
 
 def get_channel_id(client, channel_name):
     try:
-        entity = client.get_entity(channel_name)
-        print(f"Название: {entity.title}")
-        print(f"ID: {entity.id}")
-        print(f"Username: @{entity.username}" if entity.username else "Username: None")
+        dialogs: DialogMethods = client.get_dialogs()
+        print(dialogs)
+        # print(f"Название: {entity.title}")
+        # print(f"ID: {entity.id}")
+        # print(f"Username: @{entity.username}" if entity.username else "Username: None")
     except Exception as e:
         print(f"Ошибка: {e}")
 
