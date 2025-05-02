@@ -1,10 +1,10 @@
 import argparse
 
-import telethon.client
+# import telethon.client
 from telethon.sync import TelegramClient
 from telethon.errors import SessionPasswordNeededError
-from telethon import To
-from telethon.types import Dialog
+# from telethon import To
+# from telethon.types import Dialog
 import config
 
 
