@@ -4,6 +4,7 @@ import telethon.tl.types
 # import telethon.client
 from telethon.sync import TelegramClient
 from telethon.errors import SessionPasswordNeededError
+from telethon.utils import get_peer_id
 # from telethon import To
 # from telethon.types import Dialog
 import config
@@ -18,6 +19,7 @@ def get_channel_id(client, channel_name):
                 if channel_name == channel.title:
                     print("Название:", channel.title)
                     print("Полученный ID:", channel.id)
+                    print("Второй вариант ID:", get_peer_id(channel.id))
                     return
         raise Exception("Канал не найден!")
     except Exception as e:
