@@ -3,18 +3,20 @@ import argparse
 import telethon.client
 from telethon.sync import TelegramClient
 from telethon.errors import SessionPasswordNeededError
-from telethon.client import DialogMethods
+from telethon import To
 from telethon.types import Dialog
 import config
 
 
 def get_channel_id(client, channel_name):
     try:
-        dialogs: DialogMethods = client.get_dialogs()
-        for dialog in dialogs.iter_dialogs():
+        dialogs = client.get_dialogs()
+        for dialog in dialogs:
             # dialog: Dialog
             try:
-                print(dialog.name)
+                print(f"{dialog.entity}")
+                print(f"   ID: {dialog.entity.id}")
+                print(f"   Тип: {type(dialog.entity)}")
             except Exception as er:
                 print(dialog)
         # print(f"Название: {entity.title}")
