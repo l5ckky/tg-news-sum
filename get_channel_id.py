@@ -1,5 +1,6 @@
 import argparse
 
+import telethon.tl.types
 # import telethon.client
 from telethon.sync import TelegramClient
 from telethon.errors import SessionPasswordNeededError
@@ -12,16 +13,13 @@ def get_channel_id(client, channel_name):
     try:
         dialogs = client.get_dialogs()
         for dialog in dialogs:
-            # dialog: Dialog
-            try:
-                print(f"{dialog.entity}")
-                print(f"   ID: {dialog.entity.id}")
-                print(f"   Тип: {type(dialog.entity)}")
-            except Exception as er:
-                print(dialog)
-        # print(f"Название: {entity.title}")
-        # print(f"ID: {entity.id}")
-        # print(f"Username: @{entity.username}" if entity.username else "Username: None")
+            if type(dialog.entity) == telethon.tl.types.Channel:
+                channel: telethon.tl.types.Channel = dialog.entity
+                if channel_name == channel.title:
+                    print("Название:", channel.title)
+                    print("Полученный ID:", channel.id)
+                else:
+                    raise Exception("Канал не найден!")
     except Exception as e:
         print(f"Ошибка: {e}")
 
