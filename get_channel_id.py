@@ -18,6 +18,7 @@ def get_channel_id(client, channel_name):
                 if channel_name == channel.title:
                     print("Название:", channel.title)
                     print("Полученный ID:", channel.id)
+                    return
                 else:
                     raise Exception("Канал не найден!")
     except Exception as e:
