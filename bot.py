@@ -1,10 +1,15 @@
+import datetime
 import logging
+
+import aiogram.exceptions
+import os
+import db
 
 import asyncio
 from aiogram import Bot, Dispatcher, types, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaDocument, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -17,9 +22,25 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.manage_bot_token, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher()
 
+
 # "База данных"
-channels = []
-words = []
+# channels = []
+# words = []
+
+
+# words = [i[0] for i in db.DB().select("SELECT * FROM words")]
+# channels = [i[0] for i in db.DB().select("SELECT * FROM channels")]
+
+def human_read_format(size):
+    if size < 1024:
+        return f"{size}Б"
+    elif size < 1024 * 1024:
+        return f"{round(size / 1024)}КБ"
+    elif size < 1024 * 1024 * 1024:
+        return f"{round(size / (1024 * 1024))}МБ"
+    else:
+        return f"{round(size / (1024 * 1024 * 1024))}ГБ"
+
 
 admins_list = config.admin_chats_list
 
@@ -61,7 +82,7 @@ def build_keyboard(items, prefix, back_handler):
 
 # Главное меню
 @dp.message(Command("start"))
-async def cmd_start(message: types.Message, back: None | types.CallbackQuery = None):
+async def cmd_start(message: types.Message, back: None | types.Message = None):
     if message.chat.id not in admins_list:
         print(message.chat.id)
         keyboard = InlineKeyboardBuilder()
@@ -74,27 +95,26 @@ async def cmd_start(message: types.Message, back: None | types.CallbackQuery = N
         )
         return
     keyboard = InlineKeyboardBuilder()
-    keyboard.add(
+    keyboard.row(
         InlineKeyboardButton(text="📢 Каналы", callback_data="channels"),
-        InlineKeyboardButton(text="📝 Слова", callback_data="words")
-    )
+        InlineKeyboardButton(text="📝 Слова", callback_data="words"))
+    keyboard.row(InlineKeyboardButton(text="📡 Логи", callback_data="logs"))
+
     if back:
-        await back.message.edit_text(
-            f"⚙️ {html.bold('Главное меню')}",
-            reply_markup=keyboard.as_markup()
-        )
+        domsg = back.edit_text
     else:
-        await message.answer(
-            f"⚙️ {html.bold('Главное меню')}",
-            reply_markup=keyboard.as_markup()
-        )
+        domsg = message.answer
+
+    await domsg(f"⚙️ {html.bold('Главное меню')}",
+                reply_markup=keyboard.as_markup())
 
 
 # Обработка кнопки Каналы
 @dp.callback_query(F.data == "channels")
 async def channels_list(callback: types.CallbackQuery):
+    channels = [i[0] for i in db.DB().select("SELECT * FROM channels")]
     await callback.message.edit_text(
-        f"{html.bold('Список каналов')}\n{html.italic('Нажмите на элемент для подробностей') if channels else html.italic('Кажется, здесь пусто... Добавьте первый канал!')}",
+        f"{html.bold('📢 Список каналов')}\n{html.italic('Нажмите на элемент для подробностей') if channels else html.italic('Кажется, здесь пусто... Добавьте первый канал!')}",
         reply_markup=build_keyboard(channels, "channel", "main_menu")
     )
 
@@ -102,8 +122,9 @@ async def channels_list(callback: types.CallbackQuery):
 # Обработка кнопки Слова
 @dp.callback_query(F.data == "words")
 async def words_list(callback: types.CallbackQuery):
+    words = [i[0] for i in db.DB().select("SELECT * FROM words")]
     await callback.message.edit_text(
-        f"{html.bold('Список слов')}\n{html.italic('Нажмите на элемент для подробностей') if words else html.italic('Кажется, здесь пусто... Добавьте первое слово!')}",
+        f"{html.bold('📝 Список слов')}\n{html.italic('Нажмите на элемент для подробностей') if words else html.italic('Кажется, здесь пусто... Добавьте первое слово!')}",
         reply_markup=build_keyboard(words, "word", "main_menu")
     )
 
@@ -158,13 +179,17 @@ async def delete_item(callback: types.CallbackQuery):
 async def confirm_delete(callback: types.CallbackQuery):
     prefix = "channel" if "channel" in callback.data else "word"
     item = callback.data.split("-", maxsplit=2)[2]
-
-    if prefix == "channel":
-        channels.remove(item)
-        await channels_list(callback)
-    else:
-        words.remove(item)
-        await words_list(callback)
+    try:
+        if prefix == "channel":
+            db.DB().delete("channels", [item])
+            await channels_list(callback)
+        else:
+            db.DB().delete("words", [item])
+            await words_list(callback)
+    except Exception as e:
+        await callback.message.answer(
+            f"{html.bold("Произошла ошибка при удалении из Базы Данных:")}\n{html.blockquote(e)}")
+        await back_to_main(callback)
 
 
 # Обработка добавления
@@ -196,20 +221,25 @@ async def process_item(message: types.Message, state: FSMContext):
     prefix = data.get("prefix")
     item = message.text.lower()
 
-    await (await bot.get_chat(message.chat.id)).delete_message(message.message_id - 1)
+    await bot.delete_message(message.chat.id, message.message_id - 1)
 
     channel_name = ''
     bad_request = False
-    if prefix == "channel":
-        if item.startswith("@"):
-            item = item[1:]
-        try:
-            channel_name = (await (bot.get_chat("@" + item))).title
-            channels.append(item)
-        except Exception as e:
-            bad_request = True
-    else:
-        words.append(item)
+    try:
+        if prefix == "channel":
+            try:
+                if item.startswith("@"):
+                    item = item[1:]
+                channel_name = (await (bot.get_chat("@" + item))).title
+                db.DB().insert("channels", [item])
+            except aiogram.exceptions.TelegramBadRequest:
+                bad_request = True
+        else:
+            db.DB().insert("words", [item])
+    except Exception as e:
+        await message.answer(
+            f"{html.bold("Произошла ошибка при добавлении в Базу Данных:")}\n{html.blockquote(e)}")
+        await cmd_start(message, message)
 
     if bad_request:
         builder = InlineKeyboardBuilder()
@@ -218,8 +248,7 @@ async def process_item(message: types.Message, state: FSMContext):
             callback_data=f"{prefix}s"
         ), InlineKeyboardButton(
             text="➕ Добавить другой",
-            callback_data=f"{prefix}-add"
-        ))
+            callback_data=f"{prefix}-add"))
         await message.delete()
         await message.answer(
             f"{html.bold('Канал не найден!')}\n{html.italic(f'Тег @{item} не существует!')}",
@@ -246,7 +275,204 @@ async def process_item(message: types.Message, state: FSMContext):
 # Возврат в главное меню
 @dp.callback_query(F.data == "main_menu")
 async def back_to_main(callback: types.CallbackQuery):
-    await cmd_start(callback.message, callback)
+    await cmd_start(callback.message, callback.message)
+
+
+# Обработка кнопки Логи
+@dp.callback_query(F.data == "logs")
+async def logs_menu(callback: types.CallbackQuery):
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text="🗓 Лог за сегодня",
+        callback_data='logs-log-today',
+    ))
+    builder.row(InlineKeyboardButton(
+        text="🗓 Лог за вчера",
+        callback_data='logs-log-yesterday',
+    ))
+    builder.row(InlineKeyboardButton(
+        text="⬅️ Назад",
+        callback_data='main_menu',
+    ), InlineKeyboardButton(
+        text="🗂 Другое",
+        callback_data='logs-other',
+    )
+        # , InlineKeyboardButton(
+        # text=f"📥 Скачать все логи ({human_read_format(os.path.getsize("logs/main_log.log"))})",
+        # callback_data='logs-download-main',)
+    )
+    try:
+        await callback.message.edit_text(
+            f"{html.bold('📡 Меню управления логами')}\n{html.italic('Выберите действие')}",
+            reply_markup=builder.as_markup()
+        )
+    except Exception:
+        await callback.message.delete()
+        await callback.message.answer(
+            f"{html.bold('📡 Меню управления логами')}\n{html.italic('Выберите действие')}",
+            reply_markup=builder.as_markup()
+        )
+
+
+@dp.callback_query(F.data == "logs-other")
+async def logs_menu_other(callback: types.CallbackQuery):
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text="⬅️ Назад",
+        callback_data='logs',
+    ), InlineKeyboardButton(
+        text="Выбрать дату",
+        callback_data='logs-select-date',
+    ))
+    builder.row(InlineKeyboardButton(
+        text="Выбрать кол-во строк",
+        callback_data='logs-select-lines',
+    ))
+    builder.row(InlineKeyboardButton(
+        text=f"📥 Скачать все логи ({human_read_format(os.path.getsize("logs/main_log.log"))})",
+        callback_data='logs-action-download-main'))
+    builder.row()
+    await callback.message.edit_text(
+        f"{html.bold('📡 Меню управления логами: Другое')}\n{html.italic('Выберите действие...')}",
+        reply_markup=builder.as_markup()
+    )
+
+
+@dp.callback_query(F.data.startswith("logs-log-"))
+async def logs_log(callback: types.CallbackQuery):
+    pr = callback.data.split("-", maxsplit=2)[-1]
+
+    if pr == 'today':
+        day = datetime.datetime.today().date()
+        day_word = 'сегодня'
+    elif pr == 'yesterday':
+        day = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
+        day_word = 'вчера'
+    else:
+        day = datetime.datetime.strptime(pr, "%d_%m_%Y").date()
+        day_word = day.strftime("%d.%m.%Y")
+
+    count_lines = 0
+    day_log = ''
+    file = f"logs/daily/log_{day.strftime('%d_%m_%Y')}.log"
+    if os.path.exists(file):
+        day_log = file
+
+    with open(day_log, 'r', encoding="utf-8") as f:
+        count_lines = len(f.readlines())
+
+    if not day_log:
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(
+            text="Нет логов",
+            callback_data='dummy',
+        ))
+        builder.row(InlineKeyboardButton(
+            text=f"⬅️ К меню логов",
+            callback_data='logs',
+        ))
+        await callback.message.edit_text(
+            f"{html.bold(f'📡 Логи за {day_word} не найдены!')}\n{html.italic(f'{day.strftime("%d.%m.%Y")} нет логов!')}",
+            reply_markup=builder.as_markup()
+        )
+        return
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text=f"Просмотр ({str(count_lines)} строк)",
+        callback_data=f'logs-action-show-{day_log}',
+    ))
+    builder.row(InlineKeyboardButton(
+        text=f"Скачать файл ({human_read_format(os.path.getsize(f"{day_log}"))})",
+        callback_data=f'logs-action-download-{day_log}',
+    ))
+    builder.row(InlineKeyboardButton(
+        text=f"⬅️ К меню логов",
+        callback_data='logs'))
+    try:
+        await callback.message.edit_text(
+            f"{html.bold(f'📡 Лог за {day_word} {f"({day.strftime("%d.%m.%Y")})" if pr in ("today", 'yesterday') else ""}')}\n{html.italic('Выберите действие...')}",
+            reply_markup=builder.as_markup()
+        )
+    except Exception:
+        await callback.message.delete()
+        await callback.message.answer(
+            f"{html.bold(f'📡 Лог за {day_word} {f"({day.strftime("%d.%m.%Y")})" if pr in ("today", 'yesterday') else ""}')}\n{html.italic('Выберите действие...')}",
+            reply_markup=builder.as_markup()
+        )
+
+
+@dp.callback_query(F.data == "logs-select-date")
+async def logs_select_date(callback: types.CallbackQuery):
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text="Открыть календарь",
+        callback_data='logs-select-date-calendar',
+    ))
+    builder.row(InlineKeyboardButton(
+        text="⬅️ Назад",
+        callback_data='logs-other',
+    ), InlineKeyboardButton(
+        text=f"Вручную",
+        callback_data='logs-select-date-manual'))
+    await callback.message.edit_text(
+        f"{html.bold('📡 Меню управления логами: Выбрать дату')}\n{html.italic('🛠 В разработке...')}",
+        reply_markup=builder.as_markup()
+    )
+
+
+@dp.callback_query(F.data.startswith("logs-action-"))
+async def logs_actions(callback: types.CallbackQuery):
+    pr = callback.data.split("-", maxsplit=3)[2]
+    r = "reload" in callback.data.split(":", maxsplit=1)
+    file = callback.data.split("-", maxsplit=3)[3] if not r else callback.data.split("-", maxsplit=3)[3].split(':')[0]
+
+    if file == "main":
+        file = "logs/main_log.log"
+        day = None
+    else:
+        day = datetime.datetime.strptime(file.split("/")[-1].split(".")[0].split("_", maxsplit=1)[1], "%d_%m_%Y").date()
+
+    if pr == 'download':
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(
+            text="⬅️ Назад",
+            callback_data=f"logs{('-log-' + day.strftime("%d_%m_%Y")) if day else ''}",
+        ))
+        media = FSInputFile(file)
+        await callback.message.edit_media(InputMediaDocument(media=media), reply_markup=builder.as_markup())
+    elif pr == 'show':
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(
+            text="⬅️ Назад",
+            callback_data=f"logs{('-log-' + day.strftime("%d_%m_%Y")) if day else ''}",
+        ),InlineKeyboardButton(
+            text="Обновить",
+            callback_data=callback.data + (":reload" if not r else ''),
+        ))
+        with open(file, 'r', encoding="utf-8") as f:
+            lines = [i.strip() for i in f.readlines()]
+            log = '\n\n'.join(lines)
+            msg = (callback.message.html_text if not r else "\n".join(
+                callback.message.html_text.split('\n', maxsplit=2)[:2])) + f"\n{html.expandable_blockquote(log)}"
+            if len(msg) > 4096:
+                builder.row(InlineKeyboardButton(
+                    text=f"Скачать файл ({human_read_format(os.path.getsize(f"{file}"))})",
+                    callback_data=f'logs-action-download-{file}',
+                ))
+                msg = (callback.message.html_text if not r else "\n".join(
+                    callback.message.html_text.split('\n', maxsplit=2)[
+                    :2])) + f"\n{html.blockquote('\n\n'.join(lines[-5:]))}\n{html.italic("Выведены только последние 5 строк. Чтобы скачать файл всего лога, нажмите кнопку ниже...")}"
+        try:
+            await callback.message.edit_text(msg, reply_markup=builder.as_markup())
+        except aiogram.exceptions.TelegramBadRequest as e:
+            if "message is not modified" in e.message:
+                await callback.answer()
+
+
+@dp.callback_query(F.data == "dummy")
+async def dummy(callback: types.CallbackQuery):
+    await callback.answer()
 
 
 # Кнопка, чтобы уйти
