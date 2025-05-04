@@ -188,7 +188,7 @@ async def confirm_delete(callback: types.CallbackQuery):
             await words_list(callback)
     except Exception as e:
         await callback.message.answer(
-            f"{html.bold("Произошла ошибка при удалении из Базы Данных:")}\n{html.blockquote(e)}")
+            f"{html.bold('Произошла ошибка при удалении из Базы Данных:')}\n{html.blockquote(e)}")
         await back_to_main(callback)
 
 
@@ -238,7 +238,7 @@ async def process_item(message: types.Message, state: FSMContext):
             db.DB().insert("words", [item])
     except Exception as e:
         await message.answer(
-            f"{html.bold("Произошла ошибка при добавлении в Базу Данных:")}\n{html.blockquote(e)}")
+            f"{html.bold('Произошла ошибка при добавлении в Базу Данных:')}\n{html.blockquote(e)}")
         await cmd_start(message, message)
 
     if bad_request:
@@ -329,7 +329,7 @@ async def logs_menu_other(callback: types.CallbackQuery):
         callback_data='logs-select-lines',
     ))
     builder.row(InlineKeyboardButton(
-        text=f"📥 Скачать все логи ({human_read_format(os.path.getsize("logs/main_log.log"))})",
+        text=f"📥 Скачать все логи ({human_read_format(os.path.getsize('logs/main_log.log'))})",
         callback_data='logs-action-download-main'))
     builder.row()
     await callback.message.edit_text(
@@ -371,8 +371,9 @@ async def logs_log(callback: types.CallbackQuery):
             text=f"⬅️ К меню логов",
             callback_data='logs',
         ))
+        format = "%d.%m.%Y"
         await callback.message.edit_text(
-            f"{html.bold(f'📡 Логи за {day_word} не найдены!')}\n{html.italic(f'{day.strftime("%d.%m.%Y")} нет логов!')}",
+            f"{html.bold(f'📡 Логи за {day_word} не найдены!')}\n{html.italic(f'{day.strftime(format)} нет логов!')}",
             reply_markup=builder.as_markup()
         )
         return
@@ -383,21 +384,25 @@ async def logs_log(callback: types.CallbackQuery):
         callback_data=f'logs-action-show-{day_log}',
     ))
     builder.row(InlineKeyboardButton(
-        text=f"Скачать файл ({human_read_format(os.path.getsize(f"{day_log}"))})",
+        text=f"Скачать файл ({human_read_format(os.path.getsize(f'{day_log}'))})",
         callback_data=f'logs-action-download-{day_log}',
     ))
     builder.row(InlineKeyboardButton(
         text=f"⬅️ К меню логов",
         callback_data='logs'))
+    a = f"({day.strftime('%d.%m.%Y')})"
+    t = 'today'
+    y = "yesterday"
+    s = ''
     try:
         await callback.message.edit_text(
-            f"{html.bold(f'📡 Лог за {day_word} {f"({day.strftime("%d.%m.%Y")})" if pr in ("today", 'yesterday') else ""}')}\n{html.italic('Выберите действие...')}",
+            f"{html.bold(f'📡 Лог за {day_word} {a if pr in (t, y) else s}')}\n{html.italic('Выберите действие...')}",
             reply_markup=builder.as_markup()
         )
     except Exception:
         await callback.message.delete()
         await callback.message.answer(
-            f"{html.bold(f'📡 Лог за {day_word} {f"({day.strftime("%d.%m.%Y")})" if pr in ("today", 'yesterday') else ""}')}\n{html.italic('Выберите действие...')}",
+            f"{html.bold(f'📡 Лог за {day_word} {a if pr in (t, y) else s}')}\n{html.italic('Выберите действие...')}",
             reply_markup=builder.as_markup()
         )
 
@@ -437,7 +442,7 @@ async def logs_actions(callback: types.CallbackQuery):
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(
             text="⬅️ Назад",
-            callback_data=f"logs{('-log-' + day.strftime("%d_%m_%Y")) if day else ''}",
+            callback_data=f"logs{('-log-' + day.strftime('%d_%m_%Y')) if day else ''}",
         ))
         media = FSInputFile(file)
         await callback.message.edit_media(InputMediaDocument(media=media), reply_markup=builder.as_markup())
@@ -445,7 +450,7 @@ async def logs_actions(callback: types.CallbackQuery):
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(
             text="⬅️ Назад",
-            callback_data=f"logs{('-log-' + day.strftime("%d_%m_%Y")) if day else ''}",
+            callback_data=f"logs{('-log-' + day.strftime('%d_%m_%Y')) if day else ''}",
         ),InlineKeyboardButton(
             text="Обновить",
             callback_data=callback.data + (":reload" if not r else ''),
@@ -457,12 +462,13 @@ async def logs_actions(callback: types.CallbackQuery):
                 callback.message.html_text.split('\n', maxsplit=2)[:2])) + f"\n{html.expandable_blockquote(log)}"
             if len(msg) > 4096:
                 builder.row(InlineKeyboardButton(
-                    text=f"Скачать файл ({human_read_format(os.path.getsize(f"{file}"))})",
+                    text=f"Скачать файл ({human_read_format(os.path.getsize(f'{file}'))})",
                     callback_data=f'logs-action-download-{file}',
                 ))
+                a = '\n\n'
                 msg = (callback.message.html_text if not r else "\n".join(
                     callback.message.html_text.split('\n', maxsplit=2)[
-                    :2])) + f"\n{html.blockquote('\n\n'.join(lines[-5:]))}\n{html.italic("Выведены только последние 5 строк. Чтобы скачать файл всего лога, нажмите кнопку ниже...")}"
+                    :2])) + f"\n{html.blockquote(a.join(lines[-5:]))}\n{html.italic('Выведены только последние 5 строк. Чтобы скачать файл всего лога, нажмите кнопку ниже...')}"
         try:
             await callback.message.edit_text(msg, reply_markup=builder.as_markup())
         except aiogram.exceptions.TelegramBadRequest as e:
