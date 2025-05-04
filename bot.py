@@ -357,9 +357,8 @@ async def logs_log(callback: types.CallbackQuery):
     file = f"logs/daily/log_{day.strftime('%d_%m_%Y')}.log"
     if os.path.exists(file):
         day_log = file
-
-    with open(day_log, 'r', encoding="utf-8") as f:
-        count_lines = len(f.readlines())
+        with open(day_log, 'r', encoding="utf-8") as f:
+            count_lines = len(f.readlines())
 
     if not day_log:
         builder = InlineKeyboardBuilder()
@@ -451,7 +450,7 @@ async def logs_actions(callback: types.CallbackQuery):
         builder.row(InlineKeyboardButton(
             text="⬅️ Назад",
             callback_data=f"logs{('-log-' + day.strftime('%d_%m_%Y')) if day else ''}",
-        ),InlineKeyboardButton(
+        ), InlineKeyboardButton(
             text="Обновить",
             callback_data=callback.data + (":reload" if not r else ''),
         ))
