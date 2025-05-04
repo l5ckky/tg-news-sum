@@ -329,8 +329,8 @@ async def logs_menu_other(callback: types.CallbackQuery):
         callback_data='logs-select-lines',
     ))
     builder.row(InlineKeyboardButton(
-        text=f"📥 Скачать все логи ({human_read_format(os.path.getsize('logs/main_log.log'))})",
-        callback_data='logs-action-download-main'))
+        text=f"📥 Скачать все логи ({human_read_format(os.path.getsize('logs/main_log.log')) if os.path.exists('logs/main_log.log') else 'Недоступно'})",
+        callback_data='logs-action-download-main' if os.path.exists('logs/main_log.log') else 'dummy'))
     builder.row()
     await callback.message.edit_text(
         f"{html.bold('📡 Меню управления логами: Другое')}\n{html.italic('Выберите действие...')}",
