@@ -16,6 +16,7 @@ def get_channel_id(client, channel_name):
         for dialog in dialogs:
             if type(dialog.entity) == telethon.tl.types.Channel:
                 channel: telethon.tl.types.Channel = dialog.entity
+                print(channel)
                 if channel_name == channel.title:
                     print("Название:", channel.title)
                     print("Полученный ID:", channel.id)

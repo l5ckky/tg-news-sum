@@ -7,13 +7,18 @@ from telethon import TelegramClient, events
 from telethon.tl.types import Channel
 from pymystem3 import Mystem
 from loguru import logger
-
+import datetime
 from text_format import words_separator, word_filter, text_msg, text_ch
 
 import config
 import db
 
-logger.add('main_log.log', level='DEBUG', format="{time} {level} {message}", rotation="10 MB")
+logger.add('logs/main_log.log', level='DEBUG', format="{time} {level} {message}", rotation="50 MB")
+logger.add(f'logs/daily/log_{datetime.date.today().strftime("%d_%m_%Y")}.log',
+           level='DEBUG',
+           format="{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {message}",
+           rotation=datetime.timedelta(days=1))
+
 
 api_hash = config.api_hash
 api_id = config.api_id
@@ -33,9 +38,7 @@ class Params:
         self.channels = []
         self.forward_target = []
 
-        words = db.DB().select("SELECT * FROM words")
-        for item in words:
-            self.words.append(item[0])
+        self.words = [i[0] for i in db.DB().select("SELECT * FROM channels")]
 
         tmp = db.DB().select("SELECT * FROM channels")
         for item in tmp:
@@ -51,9 +54,7 @@ class Params:
             except Exception as e:
                 logger.error(f"Error getting chat {item[0]}: {e}")
 
-        forward_target = db.DB().select("SELECT * FROM users")
-        for item in forward_target:
-            self.forward_target.append(item[0])
+        self.forward_target = [i[0] for i in db.DB().select("SELECT * FROM users")]
 
 
 client = TelegramClient('my_account', api_id, api_hash)

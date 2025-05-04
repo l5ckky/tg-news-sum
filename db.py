@@ -1,12 +1,12 @@
 import sqlite3
 import os
 
-class DB:
 
-    table_name ='main_db'
+class DB:
+    table_name = 'main_db'
     db_path = ''
-    #conn = sqlite3.connect(db_path)  # или :memory: чтобы сохранить в RAM
-    #cursor = conn.cursor()
+    # conn = sqlite3.connect(db_path)  # или :memory: чтобы сохранить в RAM
+    # cursor = conn.cursor()
 
     conn = None
     cursor = None
@@ -27,7 +27,7 @@ class DB:
             self.create_db('channels')
             self.create_db('words')
             self.create_db('users')
-            #self.refresh_db()
+            # self.refresh_db()
 
     def create_db(self, table_name='main_db'):
 
@@ -35,22 +35,25 @@ class DB:
         self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS {table_name}
                           (item text UNIQUE)
                        """)
-        if table_name =='test_db':
+        if table_name == 'test_db':
             self.insert('test_db', ['test'])
         self.conn.commit()
 
     def select(self, sql):  # Выполнение select к БД
         self.cursor.execute(sql)
         result = self.cursor.fetchall()
+        # self.conn.close()
         return result  # Возращает список со списком записей
 
     def insert(self, table, data):
 
         try:
-            self.cursor.executemany(f"INSERT INTO {table} VALUES (?)", (data,))  # Количество ? должно совпадать с количеством элементов во входном массиве
+            self.cursor.executemany(f"INSERT INTO {table} VALUES (?)",
+                                    (data,))  # Количество ? должно совпадать с количеством элементов во входном массиве
         except sqlite3.IntegrityError:
             pass
         self.conn.commit()
+        # self.conn.close()
 
     def test_connection(self):  # Проверка соединения. Хотя применяется эта функция для инициализации init класса
         return self.select('SELECT EXISTS(SELECT * FROM main_db)')
@@ -58,10 +61,12 @@ class DB:
     def exec(self, sql):  # Просто обёртка для запросов к БД
         self.cursor.execute(sql)
         self.conn.commit()
+        # self.conn.close()
 
     def delete(self, table, data):
         self.cursor.executemany(f"DELETE FROM {table} WHERE item =?", (data,))
         self.conn.commit()
+        # self.conn.close()
 
 
 if __name__ == '__main__':
