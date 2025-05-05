@@ -17,7 +17,7 @@ logger.add('logs/main_log.log', level='DEBUG', format="{time} {level} {message}"
 logger.add(f'logs/daily/log_{datetime.date.today().strftime("%d_%m_%Y")}.log',
            level='DEBUG',
            format="{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {message}",
-           rotation=datetime.timedelta(days=1))
+           rotation=datetime.time(hour=0, minute=0, second=0))
 
 
 api_hash = config.api_hash
