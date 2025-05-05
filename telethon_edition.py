@@ -12,11 +12,12 @@ from text_format import words_separator, word_filter, text_msg, text_ch
 
 import config
 import db
+import stats as st
 
 logger.add('logs/main_log.log', level='DEBUG', format="{time} {level} {message}", rotation="50 MB")
 logger.add(f'logs/daily/log_{datetime.date.today().strftime("%d_%m_%Y")}.log',
            level='DEBUG',
-           format="{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {message}",
+           format="{time:DD.MM.YYYY-HH:mm:ss.SSS} | {level} | {message}",
            rotation=datetime.time(hour=0, minute=0, second=0))
 
 
@@ -27,6 +28,7 @@ stem = Mystem()
 
 commands = {'канал': 'channels', 'слово': 'words', 'пользователь': 'users'}
 
+stats = st.Statistics()
 
 class Params:
     words = []
@@ -84,6 +86,7 @@ async def channel_message_handler(event):
                 logger.info(
                     f'Пост {text_msg(message)} канала {await text_ch(client, message.peer_id.channel_id)} содержит '
                     + f'слово \"{word}\" и переслан в канал сводки')
+                stats.record(word, (await client.get_entity(message.peer_id.channel_id)).username)
             except telethon.errors.ChatForwardsRestrictedError:
                 await client.send_message(
                     config.control_chanel_id,
