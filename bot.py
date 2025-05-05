@@ -379,11 +379,11 @@ async def logs_log(callback: types.CallbackQuery):
 
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(
-        text=f"Просмотр ({str(count_lines)} строк)",
+        text=f"🔍 Просмотр ({str(count_lines)} строк)",
         callback_data=f'logs-action-show-{day_log}',
     ))
     builder.row(InlineKeyboardButton(
-        text=f"Скачать файл ({human_read_format(os.path.getsize(f'{day_log}'))})",
+        text=f"📥 Скачать файл ({human_read_format(os.path.getsize(f'{day_log}'))})",
         callback_data=f'logs-action-download-{day_log}',
     ))
     builder.row(InlineKeyboardButton(
