@@ -17,10 +17,10 @@ class Statistics:
         self.today_stat_file = f"stats/daily/stat_{today}.json"
 
         if not os.path.exists(self.today_stat_file):
-            with open(self.today_stat_file, 'x', encoding="utf-8") as file_today:
+            with open(self.today_stat_file, 'w', encoding="utf-8") as file_today:
                 file_today.close()
         if not os.path.exists(self.year_stat_file):
-            with open(self.year_stat_file, 'x', encoding="utf-8") as file_today:
+            with open(self.year_stat_file, 'w', encoding="utf-8") as file_today:
                 file_today.close()
 
         with open(self.today_stat_file, 'r', encoding="utf-8") as file_today:
