@@ -2,6 +2,8 @@ import json
 import datetime
 import os
 
+import stats
+
 
 class Statistics:
     stats = {
@@ -17,15 +19,19 @@ class Statistics:
         self.today_stat_file = f"stats/daily/stat_{today}.json"
 
         if not os.path.exists(self.today_stat_file):
+            if not os.path.exists("stats"):
+                os.mkdir("stats")
+            if not os.path.exists("stats/daily"):
+                os.mkdir("stats/daily")
             with open(self.today_stat_file, 'w') as fp:
                 pass
-            # with open(self.today_stat_file, 'w+', encoding="utf-8") as file_today:
-            #     file_today.close()
         if not os.path.exists(self.year_stat_file):
+            if not os.path.exists("stats"):
+                os.mkdir("stats")
+            if not os.path.exists("stats/yearly"):
+                os.mkdir("stats/yearly")
             with open(self.year_stat_file, 'w') as fp:
                 pass
-            # with open(self.year_stat_file, 'w+', encoding="utf-8") as file_today:
-            #     file_today.close()
 
         with open(self.today_stat_file, 'r', encoding="utf-8") as file_today:
             with open(self.year_stat_file, 'r', encoding="utf-8") as file_cur_year:
@@ -66,3 +72,6 @@ class Statistics:
 
     def get(self):
         return self.stats
+
+
+Statistics()
