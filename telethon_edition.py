@@ -38,7 +38,7 @@ class Params:
         self.channels = []
         self.forward_target = []
 
-        self.words = [i[0] for i in db.DB().select("SELECT * FROM channels")]
+        self.words = [i[0] for i in db.DB().select("SELECT * FROM words")]
 
         tmp = db.DB().select("SELECT * FROM channels")
         for item in tmp:
