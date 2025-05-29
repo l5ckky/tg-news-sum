@@ -4,7 +4,7 @@ import string
 
 import telethon.types
 from telethon import TelegramClient, events
-from telethon.tl.types import Channel
+from telethon.tl.types import Channel, PeerChannel
 from pymystem3 import Mystem
 from loguru import logger
 import datetime
@@ -64,7 +64,7 @@ client = TelegramClient('my_account', api_id, api_hash)
 
 @client.on(events.NewMessage(chats=config.notifications))
 async def control_channel_handler(event):
-    await client.forward_messages(config.control_chanel_id, event.message)
+    await client.forward_messages(PeerChannel(config.control_chanel_id), event.message)
     logger.info(f'Техническое оповещение {text_msg(event.message)} переслано в канал сводки')
 
 
