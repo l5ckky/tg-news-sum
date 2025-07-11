@@ -107,8 +107,7 @@ def auth(client):
         client.run_until_disconnected()
     else:
         for chatId in config.admin_chats_list:
-            r = requests.post(url=f"{config.api_url}/sendMessage",
-                              data={'chat_id': chatId, 'text': "🚨 Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН"},
+            r = requests.post(url=f"{config.api_url}/sendMessage?chat_id={chatId}&text=🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН",
                               headers={"Content-Type": "application/json"})
 
 
