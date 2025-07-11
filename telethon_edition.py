@@ -121,6 +121,13 @@ if __name__ == '__main__':
             auth(client)
     except Exception as e:
         logger.error(f"Error: {e}")
+        for chatId in config.admin_chats_list:
+            r = requests.post(
+                url=f"{config.api_url}/sendMessage?chat_id={chatId}&text=🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН",
+                headers={"Content-Type": "application/json"})
+            while True:
+                if not client.is_user_authorized():
+                    break
         # if os.path.exists('my_account.session'):
         #     os.remove('my_account.session')
         # with client:
