@@ -109,6 +109,9 @@ def auth(client):
         for chatId in config.admin_chats_list:
             r = requests.post(url=f"{config.api_url}/sendMessage?chat_id={chatId}&text=🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН",
                               headers={"Content-Type": "application/json"})
+            while True:
+                if client.is_user_authorized():
+                   break
 
 
 if __name__ == '__main__':
