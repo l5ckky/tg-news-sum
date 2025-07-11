@@ -1,12 +1,9 @@
 import asyncio
 import os
-import string
-from idlelib.window import add_windows_to_menu
 
 import requests
 
 import telethon.types
-from requests import Request
 from telethon import TelegramClient, events
 from telethon.tl.types import Channel, PeerChannel
 from pymystem3 import Mystem
