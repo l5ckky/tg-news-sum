@@ -1,5 +1,6 @@
 import asyncio
 import os
+from asyncio import sleep
 
 import requests
 
@@ -103,15 +104,7 @@ async def channel_message_handler(event):
                     + f'слово \"{word}\" и отправлен в канал сводки')
 
 def auth(client):
-    if client.is_user_authorized():
-        client.run_until_disconnected()
-    else:
-        for chatId in config.admin_chats_list:
-            r = requests.post(url=f"{config.api_url}/sendMessage?chat_id={chatId}&text=🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН",
-                              headers={"Content-Type": "application/json"})
-            while True:
-                if client.is_user_authorized():
-                   break
+    client.run_until_disconnected()
 
 
 if __name__ == '__main__':
@@ -126,8 +119,8 @@ if __name__ == '__main__':
                 url=f"{config.api_url}/sendMessage?chat_id={chatId}&text=🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН",
                 headers={"Content-Type": "application/json"})
             while True:
-                if not client.is_user_authorized():
-                    break
+                print("Ожидание действий...")
+                sleep(60*5)
         # if os.path.exists('my_account.session'):
         #     os.remove('my_account.session')
         # with client:
