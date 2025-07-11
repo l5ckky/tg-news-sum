@@ -102,23 +102,24 @@ async def channel_message_handler(event):
                     + f'{await text_ch(client, message.peer_id.channel_id)} содержит '
                     + f'слово \"{word}\" и отправлен в канал сводки')
 
+def auth(client):
+    if client.is_user_authorized():
+        client.run_until_disconnected()
+    else:
+        for chatId in config.admin_chats_list:
+            r = requests.post(url=f"{config.api_url}/sendMessage",
+                              data={'chat_id': chatId, 'text': "🚨 Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН"},
+                              headers={"Content-Type": "application/json"})
+
 
 if __name__ == '__main__':
     try:
         with (client):
             print("запуск бота...")
-            if client.is_user_authorized():
-                client.run_until_disconnected()
-            else:
-                for chatId in config.admin_chats_list:
-                    r = requests.post(url=f"{config.api_url}/sendMessage",
-                                            data={'chat_id': chatId, 'text': "🚨 Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН"},
-                                            headers={"Content-Type": "application/json"})
-
-
+            auth(client)
     except Exception as e:
         logger.error(f"Error: {e}")
-        if os.path.exists('my_account.session'):
-            os.remove('my_account.session')
-        with client:
-            client.run_until_disconnected()
+        # if os.path.exists('my_account.session'):
+        #     os.remove('my_account.session')
+        # with client:
+        #     auth(client)
