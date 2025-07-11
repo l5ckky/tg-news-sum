@@ -1,8 +1,12 @@
 import asyncio
 import os
 import string
+from idlelib.window import add_windows_to_menu
+
+import requests
 
 import telethon.types
+from requests import Request
 from telethon import TelegramClient, events
 from telethon.tl.types import Channel, PeerChannel
 from pymystem3 import Mystem
@@ -59,7 +63,7 @@ class Params:
         self.forward_target = [i[0] for i in db.DB().select("SELECT * FROM users")]
 
 
-client = TelegramClient('my_account', api_id, api_hash)
+client = TelegramClient('my_account', int(api_id), api_hash)
 
 
 @client.on(events.NewMessage(chats=config.notifications))
@@ -86,7 +90,7 @@ async def channel_message_handler(event):
                 logger.info(
                     f'Пост {text_msg(message)} канала {await text_ch(client, message.peer_id.channel_id)} содержит '
                     + f'слово \"{word}\" и переслан в канал сводки')
-                stats.record(word, (await client.get_entity(message.peer_id.channel_id)).username)
+                # stats.record(word, (await client.get_entity(message.peer_id.channel_id)).username)
             except telethon.errors.ChatForwardsRestrictedError:
                 await client.send_message(
                     config.control_chanel_id,
@@ -102,11 +106,27 @@ async def channel_message_handler(event):
                     + f'слово \"{word}\" и отправлен в канал сводки')
 
 
+async def reauth(client):
+    await client.send_code_request(config.phone)
+    code = get_code()
+    result = await client.sign_in(config.phone, code)
+    await client.run_until_disconnected()
+    return result
+
+
 if __name__ == '__main__':
     try:
-        with client:
+        with (client):
             print("запуск бота...")
-            client.run_until_disconnected()
+            if client.is_user_authorized():
+                client.run_until_disconnected()
+            else:
+                for chatId in config.admin_chats_list:
+                    r = requests.post(url=f"{config.api_url}/sendMessage",
+                                            data={'chat_id': chatId, 'text': "🚨 Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН"},
+                                            headers={"Content-Type": "application/json"})
+
+
     except Exception as e:
         logger.error(f"Error: {e}")
         if os.path.exists('my_account.session'):
