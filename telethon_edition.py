@@ -106,14 +106,6 @@ async def channel_message_handler(event):
                     + f'слово \"{word}\" и отправлен в канал сводки')
 
 
-async def reauth(client):
-    await client.send_code_request(config.phone)
-    code = get_code()
-    result = await client.sign_in(config.phone, code)
-    await client.run_until_disconnected()
-    return result
-
-
 if __name__ == '__main__':
     try:
         with (client):
