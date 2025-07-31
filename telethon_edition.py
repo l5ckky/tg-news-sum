@@ -146,7 +146,7 @@ if __name__ == '__main__':
     try:
         logger.debug("Запуск бота...")
         print("запуск бота...")
-        auth(client)
+        asyncio.run(auth(client))
     except Exception as e:
         logger.error(f"Error: {e}")
         while True:
