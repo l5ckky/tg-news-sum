@@ -114,6 +114,7 @@ def send_bot_msg(msg):
 
 async def auth(client: TelegramClient):
     try:
+        await client.connect()
         # Проверяем, авторизован ли уже клиент
         if not await client.is_user_authorized():
             logger.debug("Клиент не авторизован. Начинаем процесс аутентификации...")
@@ -123,17 +124,19 @@ async def auth(client: TelegramClient):
 
             await client.send_code_request(phone)
 
-            client.start(
-                phone=phone,
-                code_callback=lambda: input("Введите код (отправленный в Telegram): ")
-            )
+            await client.sign_in(phone, input("Введите код: "))
+
+            # client.start(
+            #     phone=phone,
+            #     code_callback=lambda: input("Введите код (отправленный в Telegram): ")
+            # )
 
             logger.debug("Аутентификация успешно завершена")
         else:
             logger.debug("Клиент уже авторизован! Запуск клиента...")
 
-        # Запускаем клиента
-        await client.run_until_disconnected()
+
+        # await client.run_until_disconnected()
 
     except SessionPasswordNeededError:
         logger.error("Требуется пароль двухфакторной аутентификации")
@@ -142,12 +145,19 @@ async def auth(client: TelegramClient):
         logger.error(f"Ошибка аутентификации: {e}")
         raise Exception(f"Ошибка аутентификации: {e}")
 
+    try:
+        while True:
+            await asyncio.sleep(1)  # Просто держим соединение
+    except KeyboardInterrupt:
+        print("Остановка...")
+    finally:
+        await client.disconnect()
+
 
 if __name__ == '__main__':
     try:
         logger.debug("Запуск бота...")
         print("запуск бота...")
-        client.connect()
         asyncio.run(auth(client))
     except Exception as e:
         logger.error(f"Error: {e}")
