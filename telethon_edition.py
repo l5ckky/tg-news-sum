@@ -120,7 +120,7 @@ async def auth(client: TelegramClient):
             send_bot_msg("🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН")
 
             phone = input("Введите номер телефона (в формате +70000000000): ")
-            await client.connect()
+
             await client.send_code_request(phone)
 
             client.start(
@@ -147,6 +147,7 @@ if __name__ == '__main__':
     try:
         logger.debug("Запуск бота...")
         print("запуск бота...")
+        client.connect()
         asyncio.run(auth(client))
     except Exception as e:
         logger.error(f"Error: {e}")
