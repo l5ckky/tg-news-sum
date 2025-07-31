@@ -41,7 +41,6 @@ class Statistics:
                 file_cur_year.close()
             file_today.close()
 
-        print(self.stats)
 
     def record(self, word: str, channel: str):
         word = word.strip().lower()
@@ -91,8 +90,8 @@ class Statistics:
         self.today = datetime.datetime.today().date().strftime("%d_%m_%Y")
         self.current_year = datetime.datetime.today().year
 
-        self.year_stat_file = f"stats/yearly/stat_{str(self.current_year)}.json"
         self.today_stat_file = f"stats/daily/stat_{self.today}.json"
+        self.year_stat_file = f"stats/yearly/stat_{str(self.current_year)}.json"
 
         with open(self.today_stat_file, 'r', encoding="utf-8") as file_today:
             with open(self.year_stat_file, 'r', encoding="utf-8") as file_cur_year:

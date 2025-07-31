@@ -1,4 +1,5 @@
 import asyncio
+import getpass
 import os
 from asyncio import sleep
 
@@ -6,6 +7,7 @@ import requests
 
 import telethon.types
 from telethon import TelegramClient, events
+from telethon.errors import SessionPasswordNeededError
 from telethon.tl.types import Channel, PeerChannel
 from pymystem3 import Mystem
 from loguru import logger
@@ -103,25 +105,50 @@ async def channel_message_handler(event):
                     + f'{await text_ch(client, message.peer_id.channel_id)} содержит '
                     + f'слово \"{word}\" и отправлен в канал сводки')
 
-def auth(client):
-    client.run_until_disconnected()
+def send_bot_msg(msg):
+    for chatId in config.admin_chats_list:
+        logger.debug("Отправка сообщения админам в бот")
+        r = requests.post(
+            url=f"{config.api_url}/sendMessage?chat_id={chatId}&text={msg}",
+            headers={"Content-Type": "application/json"})
+
+async def auth(client: TelegramClient):
+    try:
+        # Проверяем, авторизован ли уже клиент
+        if not await client.is_user_authorized():
+            logger.debug("Клиент не авторизован. Начинаем процесс аутентификации...")
+            send_bot_msg("🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН")
+
+            phone = input("Введите номер телефона (в формате +70000000000): ")
+            await client.send_code_request(phone)
+
+            client.start(
+                phone=phone,
+                code_callback=lambda: input("Введите код (отправленный в Telegram): ")
+            )
+
+            logger.debug("Аутентификация успешно завершена")
+        else:
+            logger.debug("Клиент уже авторизован! Запуск клиента...")
+
+        # Запускаем клиента
+        await client.run_until_disconnected()
+
+    except SessionPasswordNeededError:
+        logger.error("Требуется пароль двухфакторной аутентификации")
+        raise Exception("Требуется пароль двухфакторной аутентификации")
+    except Exception as e:
+        logger.error(f"Ошибка аутентификации: {e}")
+        raise Exception(f"Ошибка аутентификации: {e}")
 
 
 if __name__ == '__main__':
     try:
-        with (client):
-            print("запуск бота...")
-            auth(client)
+        logger.debug("Запуск бота...")
+        print("запуск бота...")
+        auth(client)
     except Exception as e:
         logger.error(f"Error: {e}")
-        for chatId in config.admin_chats_list:
-            r = requests.post(
-                url=f"{config.api_url}/sendMessage?chat_id={chatId}&text=🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН",
-                headers={"Content-Type": "application/json"})
-            while True:
-                print("Ожидание действий...")
-                sleep(60*5)
-        # if os.path.exists('my_account.session'):
-        #     os.remove('my_account.session')
-        # with client:
-        #     auth(client)
+        while True:
+            send_bot_msg(f"🚨Требуется вмешательство: {e}")
+            sleep(60*5)
