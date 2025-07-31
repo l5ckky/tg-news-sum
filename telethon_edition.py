@@ -120,6 +120,7 @@ async def auth(client: TelegramClient):
             send_bot_msg("🚨Требуется вмешательство: БОТ НЕ АВТОРИЗОВАН")
 
             phone = input("Введите номер телефона (в формате +70000000000): ")
+            await client.connect()
             await client.send_code_request(phone)
 
             client.start(
